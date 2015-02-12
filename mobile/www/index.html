@@ -2,51 +2,54 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name = "format-detection" content = "telephone=no"/>
-    <!--
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width;" />
-    -->
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height" />
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/topcoat-mobile-light.min.css">
-    <title>Light Control</title>
-
-
+    <title>Meteo</title>
 </head>
 <body>
 <!--There we store all application-->
 <div class="content">
-    Loading...
+    <div class="topcoat-navigation-bar">
+        <div class="topcoat-navigation-bar__item center full">
+            <h1 class="topcoat-navigation-bar__title">Header</h1>
+        </div>
+    </div>
 </div>
 <!--There we show status message-->
 <div class="status"></div>
 
-<script src="js/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="cordova.js"></script>
-<script type="text/javascript" src="js/underscore-min.js"></script>
-<script type="text/javascript" src="js/backbone.js"></script>
-<script type="text/javascript" src="js/index.js"></script>
-
 <script type="text/template" id="loadingDeviceView">
-    Looking for Bluetooth Devices...
+    <div class="topcoat-navigation-bar">
+        <div class="topcoat-navigation-bar__item center full">
+            <h1 class="topcoat-navigation-bar__title">Looking for Bluetooth Devices...</h1>
+        </div>
+    </div>
+</script>
+
+<script type="text/template" id="chartView">
+    <canvas id="canvas" height="450" width="600"></canvas>
 </script>
 
 <script type="text/template" id="devicesView">
-    <ul>
-        <% _.each(devices, function(device){
-            <li class="device"
-                data-id="<%= device.id %>">
-                <%= device.name%>
+    <div class="topcoat-list">
+        <h3 class="topcoat-list__header">Devices</h3>
+        <ul class="topcoat-list__container">
+            <% _.each(devices, function(device){ %>
+            <li class="device topcoat-list__item" data-address="<%= device.address %>">
+                <%= device.name %>
             </li>
-        }) %>
-    </ul>
+            <% }) %>
+        </ul>
+    </div>
     <div>
-        <button class="refresh">Refresh</button>
+        <button class="refresh topcoat-button">Refresh</button>
     </div>
 </script>
 
 <script type="text/template" id="mainContentView">
     <div class="currentValuePlaceholder"></div>
+    <div class="tabPlaceholder"></div>
     <div class="chartPlaceholder"></div>
 </script>
 
@@ -63,12 +66,31 @@
         <span>CO2: </span>
         <span class="co2"> <%= co2 %> </span>
     </h3>
+
+    <button class="topcoat-button anotherDevice">Choose another device</button>
 </script>
 
-
-
-<script type="text/javascript">
-    app.initialize();
+<script type="text/template" id="tabsView">
+    <div class="topcoat-tab-bar full">
+        <% _.each(tabs, function(tab){%>
+        <label class="topcoat-tab-bar__item">
+            <input type="radio" name="tab-bar">
+            <button class="topcoat-tab-bar__button full tab-item" data-id="<%= tab.id %>"><%= tab.value %></button>
+        </label>
+        <% }) %>
+    </div>
 </script>
+
+<!--<script type="text/javascript" src="cordova.js"></script>-->
+
+<script src="js/jquery-1.9.1.min.js"></script>
+<script src="js/underscore.js"></script>
+<script type="text/javascript" src="js/chart/core.js"></script>
+<script type="text/javascript" src="js/chart/line.js"></script>
+<script type="text/javascript" src="js/backbone.js"></script>
+<script type="text/javascript" src="js/bluetoothSerialMock.js"></script>
+<script type="text/javascript" src="js/script.js"></script>
+
+
 </body>
 </html>

@@ -14,48 +14,23 @@
 
     </head>
     <body>
-        <div class="topcoat-navigation-bar">
-            <div class="topcoat-navigation-bar__item center full">
-                <h1 class="topcoat-navigation-bar__title">LED</h1>
-            </div>
-        </div>
-        <div id="connectionScreen">
-            <ul id="deviceList" class="topcoat-list">      
-            </ul>
-            <div style="margin: 10px">            
-                <button class="topcoat-button" id="refreshButton">Refresh</button>
-            </div>            
-        </div>
-        
-        <div id="colorScreen">
-            <div>
-                Use sliders to set color.
-            </div>
-            <div class="rangeDiv">
-                <input type="range" min="0" max="255" value="0" name="red" id="red" class="topcoat-range"/>
-            </div>
-            <div class="rangeDiv">
-                <input type="range" min="0" max="255" value="0" name="green" id="green" class="topcoat-range"/>
-            </div>
-            <div class="rangeDiv">
-                <input type="range" min="0" max="255" value="0" name="blue" id="blue" class="topcoat-range"/>
-            </div>
+        <h3 class="statusDevice">Device not ready</h3>
+        <h1 class="status">Connecting...</h1>
+        <div class="message"></div>
+        <h2 class="temp-container">
+            <span>Temperature: </span>
+            <span class="temp">loading ...</span>
+        </h2>    
 
-            <div id="rgbText">
-                &nbsp;
-            </div>
-            <div id="previewColor">
-            </div>
-            <p>
-                <a class="topcoat-button--large" id="disconnectButton">Disconnect</a>
-            </p>
-        </div>
-        <div id="messageDiv">        
+        <h2 class="humidity-container">
+            <span>Humidity: </span>
+            <span class="humidity">loading ...</span>
+        </h2>   
         <script type="text/javascript" src="cordova.js"></script>
         <script type="text/javascript" src="js/underscore-min.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
         <script type="text/javascript">
-            app.initialize();
+            app2.initialize();
         </script>
     </body>
 </html>
