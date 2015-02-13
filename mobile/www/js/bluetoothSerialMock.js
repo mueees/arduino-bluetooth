@@ -14,22 +14,27 @@ var devices = [
         address: "address 3"
     }
 ];
+var delay = 30;
+var interval;
 
 bluetoothSerial.list = function (success, error) {
     setTimeout(function () {
         success(devices);
-    }, 1000);
+    }, delay);
 };
-
 bluetoothSerial.connect = function (id, success, error) {
     setTimeout(function () {
         success();
-    }, 1000);
+    }, delay);
 };
 bluetoothSerial.unsubscribe = function (success, errpor) {
     setTimeout(function () {
+        if(interval){
+            clearInterval(interval);
+        }
+        interval = null;
         success();
-    }, 1000);
+    }, delay);
 };
 bluetoothSerial.subscribe = function (delimeter, callback) {
     var i = 1;
@@ -38,7 +43,7 @@ bluetoothSerial.subscribe = function (delimeter, callback) {
         return Math.random() * 99 + 1;
     }
 
-    setInterval(function () {
+    interval = setInterval(function () {
         var val = getValue();
         switch (i){
             case 1:
@@ -54,5 +59,5 @@ bluetoothSerial.subscribe = function (delimeter, callback) {
                 i = 1;
                 break;
         }
-    }, 1200);
+    }, 30);
 };

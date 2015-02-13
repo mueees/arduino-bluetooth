@@ -1,11 +1,10 @@
 $(document).ready(function () {
-
     var app = {
         currentState: null,
         states: {},
         elements: {},
         settings: {
-            maxDataCount: 4
+            maxDataCount: 40
         }
     };
 
@@ -21,7 +20,7 @@ $(document).ready(function () {
     };
 
     app.setStatus = function (message) {
-        app.elements.status.html(message);
+        app.elements.status.html('<div class="message">'+message+'</div>');
     };
 
     app.clearStatus = function () {
@@ -135,38 +134,44 @@ $(document).ready(function () {
             _.bindAll(this, 'recieveData',
                 'onTabClick');
 
+            var _this = this;
+            this.currentChartId = 1;
+
             this.tempModel = new TempModel({
                 chartData: {
                     label: "Temperature",
-                    fillColor: "rgba(220,220,220,0.2)",
-                    strokeColor: "rgba(220,220,220,1)",
-                    pointColor: "rgba(220,220,220,1)",
+                    fillColor: "rgba(151,187,205,0.2)",
+                    strokeColor: "rgba(151,187,205,1)",
+                    pointColor: "rgba(151,187,205,1)",
                     pointStrokeColor: "#fff",
                     pointHighlightFill: "#fff",
                     pointHighlightStroke: "rgba(220,220,220,1)"
-                }
+                },
+                data: []
             });
             this.humidityModel = new HumididtyModel({
-                    chartData: {
-                        label: "Humidity",
-                        fillColor: "rgba(220,220,220,0.2)",
-                        strokeColor: "rgba(220,220,220,1)",
-                        pointColor: "rgba(220,220,220,1)",
-                        pointStrokeColor: "#fff",
-                        pointHighlightFill: "#fff",
-                        pointHighlightStroke: "rgba(220,220,220,1)"
-                    }
-                });
+                chartData: {
+                    label: "Humidity",
+                    fillColor: "rgba(151,187,205,0.2)",
+                    strokeColor: "rgba(151,187,205,1)",
+                    pointColor: "rgba(151,187,205,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(220,220,220,1)"
+                },
+                data: []
+            });
             this.co2Model = new CO2Model({
                 chartData: {
                     label: "CO2",
-                    fillColor: "rgba(220,220,220,0.2)",
-                    strokeColor: "rgba(220,220,220,1)",
-                    pointColor: "rgba(220,220,220,1)",
+                    fillColor: "rgba(151,187,205,0.2)",
+                    strokeColor: "rgba(151,187,205,1)",
+                    pointColor: "rgba(151,187,205,1)",
                     pointStrokeColor: "#fff",
                     pointHighlightFill: "#fff",
                     pointHighlightStroke: "rgba(220,220,220,1)"
-                }
+                },
+                data: []
             });
 
             this.tabCollection = new TabsCollection([
@@ -182,10 +187,10 @@ $(document).ready(function () {
                     id: "3",
                     value: "CO2"
                 }/*,
-                {
-                    id: "4",
-                    value: "TOgether"
-                }*/
+                 {
+                 id: "4",
+                 value: "TOgether"
+                 }*/
             ]);
 
             this.mainContentView = new MainContentView();
@@ -199,6 +204,7 @@ $(document).ready(function () {
             this.tabView = new TabsView({
                 collection: this.tabCollection
             });
+            this.onTabClick(this.currentChartId);
 
             this.mainContentView.$el.find('.currentValuePlaceholder').append(this.currentValueView.$el);
             this.mainContentView.$el.find('.tabPlaceholder').append(this.tabView.$el);
@@ -212,6 +218,19 @@ $(document).ready(function () {
                     app.setStatus('Cannot close connection');
                 });
             });
+            this.mainContentView.on('clearData', function () {
+                if(_this.chartView) {
+                    _this.chartView.stop();
+                    _this.chartView = null;
+                }
+
+                _this.tempModel.clearData();
+                _this.humidityModel.clearData();
+                _this.co2Model.clearData();
+
+                _this.onTabClick(_this.currentChartId);
+            });
+
             this.tabView.on('tabClick', this.onTabClick);
 
             this.subscribeToDeviceData();
@@ -223,7 +242,7 @@ $(document).ready(function () {
 
         recieveData: function (data) {
             var dataType = data[0];
-            var value = data.slice(2);
+            var value = this.clearData(data.slice(2));
             switch (dataType){
                 case 't':
                     this.tempModel.addData(value);
@@ -237,8 +256,13 @@ $(document).ready(function () {
             }
         },
 
+        clearData: function (value) {
+            return Math.ceil((value)*100)/100;
+        },
+
         onTabClick: function (id) {
             var model = null;
+            this.currentChartId = id;
             switch (id){
                 case 1:
                     model = this.tempModel;
@@ -259,9 +283,17 @@ $(document).ready(function () {
         },
 
         stop: function () {
+
+            this.chartView.stop();
+            this.chartView = null;
+
+            this.currentValueView.stop();
+            this.currentValueView = null;
+
             this.tempModel = null;
             this.humidityModel = null;
             this.co2Model = null;
+
         }
     };
 
@@ -311,7 +343,8 @@ $(document).ready(function () {
 
     var MainContentView = Backbone.View.extend({
         events: {
-            'click .anotherDevice': "onAnotherDevice"
+            'click .anotherDevice': "onAnotherDevice",
+            'click .clearData': 'onClearData'
         },
 
         template: _.template($('#mainContentView').html()),
@@ -326,6 +359,10 @@ $(document).ready(function () {
 
         onAnotherDevice: function () {
             this.trigger("anotherDevice");
+        },
+
+        onClearData: function () {
+            this.trigger("clearData");
         }
     });
     var CurrentValueView = Backbone.View.extend({
@@ -340,23 +377,26 @@ $(document).ready(function () {
             this.humidityModel = options.humidityModel;
             this.co2Model = options.co2Model;
 
-            this.tempModel.on('change:currentValue', this.onTempCurrentValue);
-            this.humidityModel.on('change:currentValue', this.onHumidityCurrentValue);
-            this.co2Model.on('change:currentValue', this.onCO2CurrentValue);
+            this.listenTo(this.tempModel, 'change:currentValue', this.onTempCurrentValue);
+            this.listenTo(this.humidityModel, 'change:currentValue', this.onHumidityCurrentValue);
+            this.listenTo(this.co2Model, 'change:currentValue', this.onCO2CurrentValue);
 
             this.render();
         },
 
         onTempCurrentValue: function () {
-            this.$el.find('.temperature').html(this.tempModel.get('currentValue'));
+            this.$el.find('.temperature .value').html(this.tempModel.get('currentValue'));
+            this.$el.find('.temperature .average').html(this.tempModel.getAverageValue());
         },
 
         onHumidityCurrentValue: function () {
-            this.$el.find('.humidity').html(this.tempModel.get('currentValue'));
+            this.$el.find('.humidity .value').html(this.humidityModel.get('currentValue'));
+            this.$el.find('.humidity .average').html(this.humidityModel.getAverageValue());
         },
 
         onCO2CurrentValue: function () {
-            this.$el.find('.co2').html(this.tempModel.get('currentValue'));
+            this.$el.find('.co2 .value').html(this.co2Model.get('currentValue'));
+            this.$el.find('.co2 .average').html(this.co2Model.getAverageValue());
         },
 
         render: function () {
@@ -369,6 +409,10 @@ $(document).ready(function () {
                 humidity: this.humidityModel.get('currentValue'),
                 co2: this.co2Model.get('currentValue')
             }
+        },
+
+        stop: function () {
+            this.stopListening();
         }
     });
     var TabsView = Backbone.View.extend({
@@ -399,16 +443,53 @@ $(document).ready(function () {
         template: _.template( $('#chartView').html() ),
 
         initialize: function () {
-            _.bindAll(this, 'renderChart');
+            var _this = this;
+            _.bindAll(this, 'tryRenderChart', 'onResize');
 
+            $(window).on("resize",_.debounce(_this.onResize,300));
+
+            this.listenTo(this.model, 'change:data', this.tryRenderChart);
             this.render();
-            this.renderChart();
-            this.listenTo(this.model, 'change:data', this.renderChart);
+            this.onResize();
+            this.tryRenderChart();
+        },
+
+        onResize: function () {
+            this.$el.find('#canvas').attr('width', $(window).width() - 50);
+            if(this.chart){
+                this.destroyChart();
+                this.$el.find('#canvas').attr('width', $(window).width() - 50);
+                this.renderChart();
+            }
+        },
+
+        tryRenderChart: function () {
+            if(this.isCanRenderChart()){
+                this.hideHelpMessage();
+                this.renderChart();
+            }else{
+                this.showHelpMessage();
+                this.destroyChart();
+            }
+        },
+
+        showHelpMessage: function () {
+            this.$el.find('.help').show();
+        },
+
+        hideHelpMessage: function () {
+            this.$el.find('.help').hide();
+        },
+
+        isCanRenderChart: function () {
+            return (this.model.get('data').length >= 3) ? true: false;
         },
 
         renderChart: function () {
             if(!this.chart){
-                this.chart = new Chart(this.$el.find('#canvas').get(0).getContext("2d")).Line(this.getData());
+                this.chart = new Chart(this.$el.find('#canvas').get(0).getContext("2d"), {
+                    responsive: true
+                }).Line(this.getData());
             }else{
                 this.chart.addData([this.model.getLastValue()], this.model.getLastDate());
 
@@ -418,8 +499,17 @@ $(document).ready(function () {
             }
         },
 
+        destroyChart: function () {
+            if(this.chart) {
+                this.chart.destroy();
+                this.chart = null;
+            }
+        },
+
         render: function () {
-            this.$el.html(this.template());
+            this.$el.html(this.template({
+                label: this.model.get('chartData').label
+            }));
         },
 
         getData: function () {
@@ -430,6 +520,12 @@ $(document).ready(function () {
                 labels: this.model.getDates(),
                 datasets: [dataset]
             }
+        },
+
+        stop: function () {
+            this.stopListening();
+            this.destroyChart();
+            $(window).off('resize');
         }
     });
 
@@ -491,6 +587,11 @@ $(document).ready(function () {
         prepareDate: function (date) {
             return date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
         },
+        clearData: function () {
+            this.set('data', []);
+            this.set('currentValue', 'undefined');
+            this.trigger('change:data');
+        },
 
         getDates: function () {
             var result = [];
@@ -505,11 +606,21 @@ $(document).ready(function () {
         },
         getLastValue: function () {
             var data = this.get('data');
-            return data[data.length-1].value;
+            var lastData = data[data.length-1];
+            return (lastData) ? lastData.value : null;
         },
         getLastDate: function () {
             var data = this.get('data');
-            return this.prepareDate(data[data.length-1].date);
+            var lastData = data[data.length-1];
+            return (lastData) ? this.prepareDate(lastData.date) : null;
+        },
+        getAverageValue: function () {
+            var data = this.get('data');
+            var sum = 0;
+            _.each(data, function (item) {
+                sum += item.value;
+            });
+            return Math.ceil((sum/data.length)*100)/100;
         }
     });
     var TempModel = BaseDataModel.extend({});
@@ -527,6 +638,5 @@ $(document).ready(function () {
     //run app
     //app.initialize();
     app.goToState('chooseBluetooth');
-
 });
 
