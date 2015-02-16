@@ -14,7 +14,7 @@ var devices = [
         address: "address 3"
     }
 ];
-var delay = 30;
+var delay = 0;
 var interval;
 
 bluetoothSerial.list = function (success, error) {
@@ -59,5 +59,5 @@ bluetoothSerial.subscribe = function (delimeter, callback) {
                 i = 1;
                 break;
         }
-    }, 30);
+    }, 50);
 };

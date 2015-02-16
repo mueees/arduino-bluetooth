@@ -4,8 +4,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport"
           content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"/>
-    <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/topcoat-mobile-light.min.css">
+    <link rel="stylesheet" type="text/css" href="js/chartis/chartist.min.css">
+    <link rel="stylesheet" type="text/css" href="css/index.css">
     <title>Meteo</title>
 </head>
 <body>
@@ -13,7 +14,7 @@
 <div class="content">
     <div class="topcoat-navigation-bar">
         <div class="topcoat-navigation-bar__item center full">
-            <h1 class="topcoat-navigation-bar__title">Header</h1>
+            <h1 class="topcoat-navigation-bar__title">Loading ...</h1>
         </div>
     </div>
 </div>
@@ -28,10 +29,9 @@
     </div>
 </script>
 
-<script type="text/template" id="chartView">
-    <h3><%= label%></h3>
-    <div class="help">Wait for more data</div>
-    <canvas id="canvas" height="450" width="600"></canvas>
+<script type="text/template" id="chartlis">
+    <div><%= label%></div>
+    <div class="ct-chart chart-placeholder"></div>
 </script>
 
 <script type="text/template" id="devicesView">
@@ -53,35 +53,48 @@
     <div class="currentValuePlaceholder"></div>
     <div class="tabPlaceholder"></div>
     <div class="chartPlaceholder"></div>
+    <div class="periodsPlaceholder"></div>
 </script>
 
 <script type="text/template" id="currentValueView">
-    <h3 class="temperature">
-        <span>Temperature: </span>
-        <span class="value"> <%= temperature %> </span>
-        <span>(</span>
-        <span class="average"></span>
-        <span>)</span>
-    </h3>
-    <h3 class="humidity">
-        <span>Humidity: </span>
-        <span class="value"> <%= humidity %> </span>
-        <span>(</span>
-        <span class="average"></span>
-        <span>)</span>
-    </h3>
-    <h3 class="co2">
-        <span>CO2: </span>
-        <span class="value"> <%= co2 %> </span>
-        <span>(</span>
-        <span class="average"></span>
-        <span>)</span>
-    </h3>
+    <ul class="currentData">
+        <li class="temperature">
+            <div class="big">
+                <span class="value"> <%= temperature %> </span>
+            </div>
+            <div class="description">temp (c)</div>
+            <div class="small">
+                <span>(</span>
+                <span class="average"></span>
+                <span>)</span>
+            </div>
+        </li>
+        <li class="humidity">
+            <div class="big">
+                <span class="value"> <%= humidity %> </span>
+            </div>
+            <div class="description">humidity (%)</div>
+            <div class="small">
+                <span>(</span>
+                <span class="average"></span>
+                <span>)</span>
+            </div>
+        </li>
+        <li class="co2">
+            <div class="big">
+                <span class="value"> <%= co2 %> </span>
+            </div>
+            <div class="description">co2</div>
+            <div class="small">
+                <span>(</span>
+                <span class="average"></span>
+                <span>)</span>
+            </div>
+        </li>
+    </ul>
 
-    <br/>
-
-    <button class="topcoat-button anotherDevice">Choose another device</button>
-    <button class="topcoat-button clearData">Clear all data</button>
+    <button class="topcoat-button--quiet anotherDevice">Devices</button>
+    <button class="topcoat-button--quiet clearData">Clear</button>
     <br/>
     <br/>
 </script>
@@ -97,16 +110,14 @@
     </div>
 </script>
 
-<!--<script type="text/javascript" src="cordova.js"></script>-->
+<script type="text/javascript" src="cordova.js"></script>
+<!--<script type="text/javascript" src="js/bluetoothSerialMock.js"></script>-->
 
 <script src="js/jquery-1.9.1.min.js"></script>
 <script src="js/underscore-min.js"></script>
-<script type="text/javascript" src="js/chart/core.js"></script>
-<script type="text/javascript" src="js/chart/line.js"></script>
+<script type="text/javascript" src="js/chartis/chartist.min.js"></script>
 <script type="text/javascript" src="js/backbone.js"></script>
-<script type="text/javascript" src="js/bluetoothSerialMock.js"></script>
 <script type="text/javascript" src="js/script.js"></script>
-
 
 </body>
 </html>

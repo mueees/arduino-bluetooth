@@ -1,36 +1,123 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <meta name = "format-detection" content = "telephone=no"/>
-        <!--
-        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width;" />
-        -->
-        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height" />
-        <link rel="stylesheet" type="text/css" href="css/index.css">
-        <link rel="stylesheet" type="text/css" href="css/topcoat-mobile-light.min.css">
-        <title>Light Control</title>
-        <script src="js/jquery-1.9.1.min.js"></script>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport"
+          content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"/>
+    <link rel="stylesheet" type="text/css" href="css/topcoat-mobile-light.min.css">
+    <link rel="stylesheet" type="text/css" href="js/chartis/chartist.min.css">
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+    <title>Meteo</title>
+</head>
+<body>
+<!--There we store all application-->
+<div class="content">
+    <div class="topcoat-navigation-bar">
+        <div class="topcoat-navigation-bar__item center full">
+            <h1 class="topcoat-navigation-bar__title">Loading ...</h1>
+        </div>
+    </div>
+</div>
+<!--There we show status message-->
+<div class="status"></div>
 
-    </head>
-    <body>
-        <h3 class="statusDevice">Device not ready</h3>
-        <h1 class="status">Connecting...</h1>
-        <div class="message"></div>
-        <h2 class="temp-container">
-            <span>Temperature: </span>
-            <span class="temp">loading ...</span>
-        </h2>    
+<script type="text/template" id="loadingDeviceView">
+    <div class="topcoat-navigation-bar">
+        <div class="topcoat-navigation-bar__item center full">
+            <h1 class="topcoat-navigation-bar__title">Looking for Bluetooth Devices...</h1>
+        </div>
+    </div>
+</script>
 
-        <h2 class="humidity-container">
-            <span>Humidity: </span>
-            <span class="humidity">loading ...</span>
-        </h2>   
-        <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/underscore-min.js"></script>
-        <script type="text/javascript" src="js/index.js"></script>
-        <script type="text/javascript">
-            app2.initialize();
-        </script>
-    </body>
+<script type="text/template" id="chartlis">
+    <div><%= label%></div>
+    <div class="ct-chart chart-placeholder"></div>
+</script>
+
+<script type="text/template" id="devicesView">
+    <div class="topcoat-list">
+        <h3 class="topcoat-list__header">Devices</h3>
+        <ul class="topcoat-list__container">
+            <% _.each(devices, function(device){ %>
+            <li class="device topcoat-list__item" data-address="<%= device.address %>">
+                <%= device.name %> (<%= device.address %>)
+            </li>
+            <% }) %>
+        </ul>
+    </div>
+    <br/>
+    <button class="refresh topcoat-button">Refresh</button>
+</script>
+
+<script type="text/template" id="mainContentView">
+    <div class="currentValuePlaceholder"></div>
+    <div class="tabPlaceholder"></div>
+    <div class="chartPlaceholder"></div>
+    <div class="periodsPlaceholder"></div>
+</script>
+
+<script type="text/template" id="currentValueView">
+    <ul class="currentData">
+        <li class="temperature">
+            <div class="big">
+                <span class="value"> <%= temperature %> </span>
+            </div>
+            <div class="description">temp (c)</div>
+            <div class="small">
+                <span>(</span>
+                <span class="average"></span>
+                <span>)</span>
+            </div>
+        </li>
+        <li class="humidity">
+            <div class="big">
+                <span class="value"> <%= humidity %> </span>
+            </div>
+            <div class="description">humidity (%)</div>
+            <div class="small">
+                <span>(</span>
+                <span class="average"></span>
+                <span>)</span>
+            </div>
+        </li>
+        <li class="co2">
+            <div class="big">
+                <span class="value"> <%= co2 %> </span>
+            </div>
+            <div class="description">co2</div>
+            <div class="small">
+                <span>(</span>
+                <span class="average"></span>
+                <span>)</span>
+            </div>
+        </li>
+    </ul>
+
+    <button class="topcoat-button--quiet anotherDevice">Devices</button>
+    <button class="topcoat-button--quiet clearData">Clear</button>
+    <br/>
+    <br/>
+</script>
+
+<script type="text/template" id="tabsView">
+    <div class="topcoat-tab-bar full">
+        <% _.each(tabs, function(tab){%>
+        <label class="topcoat-tab-bar__item">
+            <input type="radio" name="tab-bar">
+            <button class="topcoat-tab-bar__button full tab-item" data-id="<%= tab.id %>"><%= tab.value %></button>
+        </label>
+        <% }) %>
+    </div>
+</script>
+
+<script type="text/javascript" src="cordova.js"></script>
+<!--<script type="text/javascript" src="js/bluetoothSerialMock.js"></script>-->
+
+<script src="js/jquery-1.9.1.min.js"></script>
+<script src="js/underscore-min.js"></script>
+<script type="text/javascript" src="js/chartis/chartist.min.js"></script>
+<script type="text/javascript" src="js/backbone.js"></script>
+<script type="text/javascript" src="js/script.js"></script>
+
+</body>
 </html>

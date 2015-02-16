@@ -4,7 +4,7 @@ $(document).ready(function () {
         states: {},
         elements: {},
         settings: {
-            maxDataCount: 40
+            maxValuesCount: 20
         }
     };
 
@@ -14,7 +14,7 @@ $(document).ready(function () {
     };
 
     app.initialize = function () {
-        document.addEventListener('deviceready', function deviceready(){
+        document.addEventListener('deviceready', function (){
             app.goToState('chooseBluetooth');
         }, false);
     };
@@ -26,6 +26,8 @@ $(document).ready(function () {
     app.clearStatus = function () {
         app.elements.status.html('');
     };
+
+    app.elements.status.on('click', app.clearStatus);
 
     app.goToState = function (state, params) {
         //stop previous state
@@ -138,63 +140,44 @@ $(document).ready(function () {
             this.currentChartId = 1;
 
             this.tempModel = new TempModel({
-                chartData: {
-                    label: "Temperature",
-                    fillColor: "rgba(151,187,205,0.2)",
-                    strokeColor: "rgba(151,187,205,1)",
-                    pointColor: "rgba(151,187,205,1)",
-                    pointStrokeColor: "#fff",
-                    pointHighlightFill: "#fff",
-                    pointHighlightStroke: "rgba(220,220,220,1)"
-                },
+                label: "Temperature",
                 data: []
             });
             this.humidityModel = new HumididtyModel({
-                chartData: {
-                    label: "Humidity",
-                    fillColor: "rgba(151,187,205,0.2)",
-                    strokeColor: "rgba(151,187,205,1)",
-                    pointColor: "rgba(151,187,205,1)",
-                    pointStrokeColor: "#fff",
-                    pointHighlightFill: "#fff",
-                    pointHighlightStroke: "rgba(220,220,220,1)"
-                },
+                label: "Humidity",
                 data: []
             });
             this.co2Model = new CO2Model({
-                chartData: {
-                    label: "CO2",
-                    fillColor: "rgba(151,187,205,0.2)",
-                    strokeColor: "rgba(151,187,205,1)",
-                    pointColor: "rgba(151,187,205,1)",
-                    pointStrokeColor: "#fff",
-                    pointHighlightFill: "#fff",
-                    pointHighlightStroke: "rgba(220,220,220,1)"
-                },
+                label: "CO2",
                 data: []
             });
 
             this.tabCollection = new TabsCollection([
                 {
                     id: "1",
-                    value: "Temperature"
+                    value: "Temp"
                 },
                 {
                     id: "2",
-                    value: "Humidity"
+                    value: "Hum"
                 },
                 {
                     id: "3",
                     value: "CO2"
-                }/*,
-                 {
-                 id: "4",
-                 value: "TOgether"
-                 }*/
+                },
+                {
+                    id: "4",
+                    value: "All"
+                }
             ]);
 
             this.mainContentView = new MainContentView();
             app.elements.placeholder.html(this.mainContentView.$el);
+
+            this.currentPeriodId = null;
+            this.periodsCollection = null;
+            this.periodView = null;
+            this.renderPeriod();
 
             this.currentValueView = new CurrentValueView({
                 tempModel: this.tempModel,
@@ -219,16 +202,9 @@ $(document).ready(function () {
                 });
             });
             this.mainContentView.on('clearData', function () {
-                if(_this.chartView) {
-                    _this.chartView.stop();
-                    _this.chartView = null;
-                }
-
                 _this.tempModel.clearData();
                 _this.humidityModel.clearData();
                 _this.co2Model.clearData();
-
-                _this.onTabClick(_this.currentChartId);
             });
 
             this.tabView.on('tabClick', this.onTabClick);
@@ -262,7 +238,6 @@ $(document).ready(function () {
 
         onTabClick: function (id) {
             var model = null;
-            this.currentChartId = id;
             switch (id){
                 case 1:
                     model = this.tempModel;
@@ -273,13 +248,96 @@ $(document).ready(function () {
                 case 3:
                     model = this.co2Model;
                     break;
+                case 4:
+                    model = {
+                        tempModel: this.tempModel,
+                        humidityModel: this.humidityModel,
+                        co2Model: this.co2Model
+                    };
+                    break;
             }
 
-            this.chartView = new ChartView({
-                model: model
-            });
+            if(this.chartView){
+                this.chartView.stop();
+                this.chartView = null;
+            }
+
+            if(id == 4){
+                this.chartView = new ChartisAllView({
+                    model: model,
+                    currentPeriodId: this.currentPeriodId
+                });
+            }else{
+                this.chartView = new ChartisView({
+                    model: model,
+                    currentPeriodId: this.currentPeriodId
+                });
+            }
+
 
             this.mainContentView.$el.find('.chartPlaceholder').html(this.chartView.$el);
+            this.renderPeriod();
+        },
+
+        getCurrentModel: function () {
+            var result;
+            switch (this.currentChartId){
+                case 1:
+                    result = this.tempModel;
+                    break;
+                case 2:
+                    result = this.humidityModel;
+                    break;
+                case 3:
+                    result = this.co2Model;
+                    break;
+                case 4:
+                    result = this.tempModel;
+                    break;
+            }
+            return result;
+        },
+
+        getPeriods: function () {
+            var model = this.getCurrentModel();
+            return model.getPeriods();
+        },
+
+        renderPeriod: function () {
+            var periods = this.getPeriods(),
+                _this = this;
+
+            if( !this.periodsCollection ){
+                this.periodsCollection = new TabsCollection(periods);
+            }else{
+                if(this.periodsCollection.toJSON() == periods) return false;
+                this.periodsCollection = new TabsCollection(periods);
+            }
+
+            if(this.periodView) this.periodView = null;
+
+            this.periodView = new TabsView({
+                collection: this.periodsCollection
+            });
+
+            if(!this.currentPeriodId && periods.length){
+                this.currentPeriodId = periods[0].id;
+            }else{
+                var perdiosResult = _.find(periods, function (period) {
+                    return period.id == _this.currentPeriodId;
+                });
+
+                if(!perdiosResult && periods.length){
+                    this.currentPeriodId = periods[0].id;
+                }
+            }
+
+            this.periodView.on('tabClick', function(periodId){
+                _this.currentPeriodId = periodId;
+                _this.chartView.updatePeriodId(_this.currentPeriodId);
+            });
+
+            this.mainContentView.$el.find('.periodsPlaceholder').html(this.periodView.$el);
         },
 
         stop: function () {
@@ -349,7 +407,7 @@ $(document).ready(function () {
 
         template: _.template($('#mainContentView').html()),
 
-        initialize: function () {
+        initialize: function (options) {
             this.render();
         },
 
@@ -438,94 +496,104 @@ $(document).ready(function () {
             this.trigger("tabClick", id);
         }
     });
-    var ChartView = Backbone.View.extend({
+    var ChartisView = Backbone.View.extend({
+        template: _.template($('#chartlis').html()),
 
-        template: _.template( $('#chartView').html() ),
+        initialize: function (options) {
+            this.currentPeriodId = options.currentPeriodId;
 
-        initialize: function () {
-            var _this = this;
-            _.bindAll(this, 'tryRenderChart', 'onResize');
-
-            $(window).on("resize",_.debounce(_this.onResize,300));
-
-            this.listenTo(this.model, 'change:data', this.tryRenderChart);
             this.render();
-            this.onResize();
-            this.tryRenderChart();
-        },
-
-        onResize: function () {
-            this.$el.find('#canvas').attr('width', $(window).width() - 50);
-            if(this.chart){
-                this.destroyChart();
-                this.$el.find('#canvas').attr('width', $(window).width() - 50);
-                this.renderChart();
-            }
-        },
-
-        tryRenderChart: function () {
-            if(this.isCanRenderChart()){
-                this.hideHelpMessage();
-                this.renderChart();
-            }else{
-                this.showHelpMessage();
-                this.destroyChart();
-            }
-        },
-
-        showHelpMessage: function () {
-            this.$el.find('.help').show();
-        },
-
-        hideHelpMessage: function () {
-            this.$el.find('.help').hide();
-        },
-
-        isCanRenderChart: function () {
-            return (this.model.get('data').length >= 3) ? true: false;
-        },
-
-        renderChart: function () {
-            if(!this.chart){
-                this.chart = new Chart(this.$el.find('#canvas').get(0).getContext("2d"), {
-                    responsive: true
-                }).Line(this.getData());
-            }else{
-                this.chart.addData([this.model.getLastValue()], this.model.getLastDate());
-
-                if(this.model.get('data').length >= app.settings.maxDataCount){
-                    this.chart.removeData();
-                }
-            }
-        },
-
-        destroyChart: function () {
-            if(this.chart) {
-                this.chart.destroy();
-                this.chart = null;
-            }
+            this.renderChart();
+            this.listenTo(this.model, 'change:data', this.onChangeData);
         },
 
         render: function () {
             this.$el.html(this.template({
-                label: this.model.get('chartData').label
+                label: this.getLabel()
             }));
         },
 
-        getData: function () {
-            var dataset = this.model.get('chartData');
-            dataset.data = this.model.getValues();
+        getLabel: function () {
+            return this.model.get('label');
+        },
 
+        renderChart: function () {
+            var $el = this.$el.find('.chart-placeholder');
+            this.chart = new Chartist.Line($el[0], this.getData(), {
+                showArea: true,
+                lineSmooth: Chartist.Interpolation.cardinal({
+                    tension: 4
+                })
+            });
+        },
+
+        updatePeriodId: function (id) {
+            if(this.currentPeriodId == id ) return false;
+            this.currentPeriodId = id;
+            this.updateChart();
+        },
+
+        getData: function () {
             return {
-                labels: this.model.getDates(),
-                datasets: [dataset]
+                labels: this.model.getDates(this.currentPeriodId),
+                series: [
+                    this.model.getValues(this.currentPeriodId)
+                ]
             }
+        },
+
+        onChangeData: function () {
+            this.updateChart();
+        },
+
+        updateChart: function () {
+            this.chart.data = this.getData();
+            this.chart.update();
         },
 
         stop: function () {
             this.stopListening();
-            this.destroyChart();
-            $(window).off('resize');
+        }
+    });
+
+    var ChartisAllView = ChartisView.extend({
+        template: _.template($('#chartlis').html()),
+
+        initialize: function (options) {
+            this.currentPeriodId = options.currentPeriodId;
+            this.periodView = null;
+
+            this.render();
+            this.renderChart();
+
+            this.listenTo(this.model.tempModel, 'change:data', this.onChangeData);
+            this.listenTo(this.model.humidityModel, 'change:data', this.onChangeData);
+            this.listenTo(this.model.co2Model, 'change:data', this.onChangeData);
+        },
+
+        renderChart: function () {
+            var $el = this.$el.find('.chart-placeholder');
+            this.chart = new Chartist.Line($el[0], this.getData(), {
+                showArea: true,
+                lineSmooth: Chartist.Interpolation.cardinal({
+                    tension: 4
+                })
+            });
+        },
+
+        getLabel: function () {
+            return 'All'
+        },
+
+        getData: function () {
+            return {
+                labels: this.model.tempModel.getDates(this.currentPeriodId),
+                series: [
+                    this.model.tempModel.getValues(this.currentPeriodId),
+                    this.model.humidityModel.getValues(this.currentPeriodId),
+                    this.model.co2Model.getValues(this.currentPeriodId)
+                ]
+            }
         }
     });
 
@@ -545,19 +613,47 @@ $(document).ready(function () {
     });
     var TabModel = Backbone.Model.extend({});
 
-    /*
-     *
-     * data = [{
-     *   date: new Date(),
-     *   value: 34.6
-     * }]
-     *
-     * */
     var BaseDataModel = Backbone.Model.extend({
         defaults: {
             data: [],
             currentValue: 0
         },
+        defaultPeriods: [
+            {
+                id: '1',
+                value: "All"
+            },
+            {
+                id: '11',
+                value: '3 m',
+                milliseconds: 1000*60*3
+            },
+            {
+                id: '2',
+                value: '10 m',
+                milliseconds: 1000*60*10
+            },
+            {
+                id: '3',
+                value: '30 m',
+                milliseconds: 1000*60*30
+            },
+            {
+                id: '4',
+                value: '1 hours',
+                milliseconds: 1000*60*60
+            },
+            {
+                id: '5',
+                value: '2 h',
+                milliseconds: 1000*60*60*2
+            },
+            {
+                id: '6',
+                value: '4 h',
+                milliseconds: 1000*60*60*4
+            }
+        ],
         addData: function (newData) {
             var data = this.get('data');
             data.push({
@@ -565,55 +661,116 @@ $(document).ready(function () {
                 value: newData
             });
 
-            if( data.length > app.settings.maxDataCount ){
-                data.shift();
-            }
-
             this.set('data', data);
             this.trigger('change:data');
             this.set('currentValue', newData);
         },
-        getValues: function () {
+        getValues: function (periodId) {
             var result = [];
-            var data = this.get('data');
+            var values = this._getValues(periodId);
 
-            _.each(data, function (item) {
+            _.each(values, function (item) {
                 result.push(item.value);
             });
 
             return result;
         },
-
-        prepareDate: function (date) {
-            return date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
-        },
-        clearData: function () {
-            this.set('data', []);
-            this.set('currentValue', 'undefined');
-            this.trigger('change:data');
-        },
-
-        getDates: function () {
+        getDates: function (periodId) {
             var result = [];
-            var data = this.get('data');
             var _this = this;
 
-            _.each(data, function (item) {
-                result.push(_this.prepareDate(item.date));
+            var values = this._getValues(periodId);
+
+            _.each(values, function (item, i) {
+                if(i == 0) {
+                    result.push(_this.prepareDate(item.date));
+                }else{
+                    var nextObj = values[i+1];
+                    if(nextObj){
+                        var next = _this.prepareDate(values[i+1]['date']);
+                    }
+                    var current = _this.prepareDate(item.date);
+
+                    if( next && current == next ){
+                        result.push("");
+                    }else {
+                        result.push(current);
+                    }
+                }
+
             });
 
             return result;
         },
-        getLastValue: function () {
-            var data = this.get('data');
-            var lastData = data[data.length-1];
-            return (lastData) ? lastData.value : null;
+
+        _getValues: function (periodId) {
+            var result = [],
+                data = this.get('data');
+
+            var periodObject = _.find(this.defaultPeriods, function (period) {
+                return period.id == periodId;
+            });
+
+            var now = new Date();
+            _.each(data, function (item) {
+                if(periodObject.id == 1){
+                    result.push(item);
+                }else if( (now - item.date) < periodObject.milliseconds ){
+                    result.push(item);
+                }
+            });
+
+            //слишком много значений, надо пропорционально уменьшить до app.settings.maxValuesCount
+            if(result.length > app.settings.maxValuesCount){
+                var currentAveragePeriod = ((result[result.length-1].date - result[0].date)/1000)/result.length;
+                var featureAveragePeriod = ((result[result.length-1].date - result[0].date)/1000)/app.settings.maxValuesCount;
+
+                var filterResult = [];
+                var scipedItem = [];
+                var previousItem;
+
+                function getAvaregeValue(array) {
+                    var sum = 0;
+                    _.each(array, function (item) {
+                        sum += item.value;
+                    });
+                    return sum/array.length;
+                }
+
+                _.each(result, function (item, i) {
+                    if(i == 0){
+                        filterResult.push(item);
+                        previousItem = item;
+                    }else{
+                        var diffSec = featureAveragePeriod - (item.date - previousItem.date)/1000;
+                        if( diffSec < currentAveragePeriod ){
+                            scipedItem.push(item);
+                            item.value = getAvaregeValue(scipedItem);
+                            filterResult.push(item);
+                            previousItem = item;
+                            scipedItem = [];
+                        }else{
+                            scipedItem.push(item);
+                        }
+                    }
+                });
+
+                result = filterResult;
+            }
+
+            return result;
         },
-        getLastDate: function () {
-            var data = this.get('data');
-            var lastData = data[data.length-1];
-            return (lastData) ? this.prepareDate(lastData.date) : null;
+
+        prepareDate: function (date) {
+            //return date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+            return date.getMinutes();
         },
+        clearData: function () {
+            this.set('data', []);
+            this.set('currentValue', 0);
+            this.trigger('change:data');
+        },
+
         getAverageValue: function () {
             var data = this.get('data');
             var sum = 0;
@@ -621,6 +778,23 @@ $(document).ready(function () {
                 sum += item.value;
             });
             return Math.ceil((sum/data.length)*100)/100;
+        },
+        getPeriods: function () {
+            var data = this.get('data');
+            var periods = [];
+
+            if(!data.length){
+                return [this.defaultPeriods[0]];
+            }
+
+            var diff = data[data.length-1].date - data[0].date;
+            _.each(this.defaultPeriods, function (currentPeriod) {
+                if(currentPeriod.id == 1 || currentPeriod.milliseconds < diff) {
+                    periods.push(currentPeriod);
+                }
+            });
+
+            return periods;
         }
     });
     var TempModel = BaseDataModel.extend({});
@@ -635,8 +809,7 @@ $(document).ready(function () {
         model: TabModel
     });
 
-    //run app
-    //app.initialize();
-    app.goToState('chooseBluetooth');
+    app.initialize();
+    //app.goToState('chooseBluetooth');
 });
 
